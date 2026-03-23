@@ -59,7 +59,7 @@ import Layout from "../layouts/Layout.astro";
 			<button
 				class="btn-primary"
 				id="btn-edit"
-				onclick="window.openModal()">✏️ Editar precios</button
+				onclick="window.openModal()">🔒 Acceso Admin</button
 			>
 			<button
 				class="btn-outline hidden"
@@ -410,9 +410,13 @@ import Layout from "../layouts/Layout.astro";
 				// We don't auto-activate edit mode to avoid confusion, 
 				// but when they click 'Editar precios', it will skip the modal.
 				$("btn-logout").classList.remove("hidden");
+				if (!editing) {
+					$("btn-edit").textContent = "✏️ Editar precios";
+				}
 			} else {
 				if (editing) cancelEdit();
 				$("btn-logout").classList.add("hidden");
+				$("btn-edit").textContent = "🔒 Acceso Admin";
 			}
 		});
 
@@ -499,7 +503,11 @@ import Layout from "../layouts/Layout.astro";
 				const el = $(k);
 				if (el) el.contentEditable = "false";
 			});
-			$("btn-edit").textContent = "✏️ Editar precios";
+			if (auth.currentUser) {
+				$("btn-edit").textContent = "✏️ Editar precios";
+			} else {
+				$("btn-edit").textContent = "🔒 Acceso Admin";
+			}
 			$("btn-edit").onclick = window.openModal;
 			$("btn-save").classList.add("hidden");
 			$("btn-reset").classList.add("hidden");
