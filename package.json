@@ -12,6 +12,8 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/vercel": "^10.0.2",
+    "@dataconnect/generated": "file:src/dataconnect-generated",
     "astro": "^6.0.8",
     "firebase": "^12.11.0"
   }
