@@ -1,11 +1,577 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
-
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+import Layout from "../layouts/Layout.astro";
 ---
 
-<Layout>
-	<Welcome />
+<Layout title="Estefi Fitness · Tarifario">
+	<div id="toast"></div>
+
+	<div class="modal-overlay" id="modal-overlay">
+		<div class="modal-box">
+			<div class="modal-drag-handle"></div>
+			<h2 class="modal-title accent" id="modal-title">ACCESO ADMIN</h2>
+			<p class="modal-subtitle" id="modal-subtitle">
+				Ingresá tu contraseña para editar los precios.
+			</p>
+
+			<div id="section-login">
+				<label class="field-label">Contraseña</label>
+				<input
+					class="modal-input"
+					type="password"
+					id="input-pass"
+					placeholder="••••••••••"
+					autocomplete="current-password"
+					onkeydown="if(event.key==='Enter') window.checkPass()"
+				/>
+				<p class="modal-error" id="modal-error"></p>
+				<div class="modal-btn-row">
+					<button class="btn-primary" onclick="window.checkPass()"
+						>Ingresar</button
+					>
+				</div>
+				<button class="modal-link" onclick="window.toggleChangeMode()"
+					>Cambiar contraseña</button
+				>
+			</div>
+
+			<div id="section-changepass" class="hidden">
+				<label class="field-label">Contraseña actual</label>
+				<input
+					class="modal-input"
+					type="password"
+					id="cp-current"
+					placeholder="••••••••••"
+					autocomplete="current-password"
+				/>
+				<label class="field-label">Nueva contraseña</label>
+				<input
+					class="modal-input"
+					type="password"
+					id="cp-new"
+					placeholder="••••••••••"
+					autocomplete="new-password"
+				/>
+				<label class="field-label">Repetir nueva contraseña</label>
+				<input
+					class="modal-input"
+					type="password"
+					id="cp-new2"
+					placeholder="••••••••••"
+					autocomplete="new-password"
+				/>
+				<p class="modal-error" id="cp-error"></p>
+				<div class="modal-btn-row">
+					<button class="btn-primary" onclick="window.doChangePass()"
+						>Cambiar</button
+					>
+					<button class="btn-outline" onclick="window.closeModal()"
+						>Cancelar</button
+					>
+				</div>
+				<button class="modal-link" onclick="window.toggleChangeMode()"
+					>← Volver</button
+				>
+			</div>
+		</div>
+	</div>
+
+	<div class="page">
+		<div class="header-eyebrow fade-up">
+			<span class="badge">Mar del Plata</span>
+			<span class="status-dot loading" id="status-dot"></span>
+			<span class="status-text" id="status-text">Cargando precios…</span>
+		</div>
+
+		<h1 class="main-title fade-up d1">
+			PERSONAL<br /><span class="accent">TRAINER</span>
+		</h1>
+		<p class="subtitle fade-up d2">Clases 1 a 1 · Tarifario</p>
+
+		<div class="controls fade-up d2">
+			<button class="btn-primary" id="btn-edit" onclick="window.openModal()"
+				>✏️ Editar precios</button
+			>
+			<button
+				class="btn-outline hidden"
+				id="btn-save"
+				onclick="window.saveAll()">💾 Guardar</button
+			>
+			<button
+				class="btn-ghost hidden"
+				id="btn-reset"
+				onclick="window.resetDefaults()">↺ Restaurar</button
+			>
+			<button
+				class="btn-ghost hidden"
+				id="btn-changepass"
+				onclick="window.openChangePass()"
+				style="margin-left:auto">🔑 Clave</button
+			>
+		</div>
+
+		<div class="edit-banner">
+			✏️ Modo edición activo — tocá cualquier valor para modificarlo
+		</div>
+
+		<p class="section-label fade-up d2">Clase individual</p>
+		<div class="price-card fade-up d3">
+			<div class="card-header">
+				<div><h2 class="card-title accent">CLASE SUELTA</h2></div>
+			</div>
+			<div class="price-grid">
+				<div class="price-item">
+					<span class="price-label">Gym</span><span class="price-value"
+						><span class="currency">$</span><span
+							class="editable skeleton"
+							id="suelta_gym"
+							contenteditable="false">5.000</span
+						></span
+					>
+				</div>
+				<div class="price-item">
+					<span class="price-label">Mi casa</span><span class="price-value"
+						><span class="currency">$</span><span
+							class="editable skeleton"
+							id="suelta_casa"
+							contenteditable="false">8.000</span
+						></span
+					>
+				</div>
+				<div class="price-item">
+					<span class="price-label">Domicilio</span><span class="price-value"
+						><span class="currency">$</span><span
+							class="editable skeleton"
+							id="suelta_dom"
+							contenteditable="false">10.000</span
+						></span
+					>
+				</div>
+			</div>
+		</div>
+
+		<p class="section-label fade-up d3" style="margin-top:28px">
+			Paquetes mensuales
+		</p>
+
+		<div class="price-card fade-up d3">
+			<div class="card-header">
+				<div>
+					<h2 class="card-title">2 VECES / SEMANA</h2><p class="card-meta">
+						<span
+							class="editable skeleton"
+							id="pack2_clases"
+							contenteditable="false">8</span
+						> clases al mes
+					</p>
+				</div>
+				<span class="off-badge"
+					><span
+						class="editable skeleton"
+						id="pack2_off"
+						contenteditable="false">10</span
+					>% OFF</span
+				>
+			</div>
+			<div class="price-grid">
+				<div class="price-item">
+					<span class="price-label">Gym</span><span class="price-value"
+						><span class="currency">$</span><span
+							class="editable skeleton"
+							id="pack2_gym"
+							contenteditable="false">36.000</span
+						></span
+					>
+				</div>
+				<div class="price-item">
+					<span class="price-label">Mi casa</span><span class="price-value"
+						><span class="currency">$</span><span
+							class="editable skeleton"
+							id="pack2_casa"
+							contenteditable="false">57.600</span
+						></span
+					>
+				</div>
+				<div class="price-item">
+					<span class="price-label">Domicilio</span><span class="price-value"
+						><span class="currency">$</span><span
+							class="editable skeleton"
+							id="pack2_dom"
+							contenteditable="false">72.000</span
+						></span
+					>
+				</div>
+			</div>
+		</div>
+
+		<div class="price-card fade-up d4">
+			<div class="card-header">
+				<div>
+					<h2 class="card-title">3 VECES / SEMANA</h2><p class="card-meta">
+						<span
+							class="editable skeleton"
+							id="pack3_clases"
+							contenteditable="false">12</span
+						> clases al mes
+					</p>
+				</div>
+				<span class="off-badge"
+					><span
+						class="editable skeleton"
+						id="pack3_off"
+						contenteditable="false">15</span
+					>% OFF</span
+				>
+			</div>
+			<div class="price-grid">
+				<div class="price-item">
+					<span class="price-label">Gym</span><span class="price-value"
+						><span class="currency">$</span><span
+							class="editable skeleton"
+							id="pack3_gym"
+							contenteditable="false">51.000</span
+						></span
+					>
+				</div>
+				<div class="price-item">
+					<span class="price-label">Mi casa</span><span class="price-value"
+						><span class="currency">$</span><span
+							class="editable skeleton"
+							id="pack3_casa"
+							contenteditable="false">81.600</span
+						></span
+					>
+				</div>
+				<div class="price-item">
+					<span class="price-label">Domicilio</span><span class="price-value"
+						><span class="currency">$</span><span
+							class="editable skeleton"
+							id="pack3_dom"
+							contenteditable="false">102.000</span
+						></span
+					>
+				</div>
+			</div>
+		</div>
+
+		<div class="price-card featured fade-up d5">
+			<div class="card-header">
+				<div>
+					<h2 class="card-title accent">5 VECES / SEMANA</h2><p
+						class="card-meta"
+					>
+						<span
+							class="editable skeleton"
+							id="pack5_clases"
+							contenteditable="false">20</span
+						> clases al mes
+					</p>
+				</div>
+				<span class="off-badge"
+					><span
+						class="editable skeleton"
+						id="pack5_off"
+						contenteditable="false">20</span
+					>% OFF</span
+				>
+			</div>
+			<div class="price-grid">
+				<div class="price-item">
+					<span class="price-label">Gym</span><span class="price-value"
+						><span class="currency">$</span><span
+							class="editable skeleton"
+							id="pack5_gym"
+							contenteditable="false">80.000</span
+						></span
+					>
+				</div>
+				<div class="price-item">
+					<span class="price-label">Mi casa</span><span class="price-value"
+						><span class="currency">$</span><span
+							class="editable skeleton"
+							id="pack5_casa"
+							contenteditable="false">128.000</span
+						></span
+					>
+				</div>
+				<div class="price-item">
+					<span class="price-label">Domicilio</span><span class="price-value"
+						><span class="currency">$</span><span
+							class="editable skeleton"
+							id="pack5_dom"
+							contenteditable="false">160.000</span
+						></span
+					>
+				</div>
+			</div>
+		</div>
+
+		<div class="divider fade-up d5"></div>
+		<div class="fade-up d5">
+			<p class="section-label">Aclaraciones</p>
+			<ul class="notas-list">
+				<li>
+					<span class="editable" id="nota1" contenteditable="false"
+						>El valor del gym se abona aparte.</span
+					>
+				</li>
+				<li>
+					<span class="editable" id="nota2" contenteditable="false"
+						>Pago mensual adelantado.</span
+					>
+				</li>
+				<li>
+					<span class="editable" id="nota3" contenteditable="false"
+						>Clases no tomadas no se recuperan.</span
+					>
+				</li>
+			</ul>
+		</div>
+		<p class="footer">Estefi Fitness · Personal Trainer · Mar del Plata</p>
+	</div>
+
+	<script>
+		import { getDoc, setDoc, onSnapshot } from "firebase/firestore";
+		import { REF } from "../lib/firebase";
+
+		const KEYS = [
+			"suelta_gym",
+			"suelta_casa",
+			"suelta_dom",
+			"pack2_clases",
+			"pack2_off",
+			"pack2_gym",
+			"pack2_casa",
+			"pack2_dom",
+			"pack3_clases",
+			"pack3_off",
+			"pack3_gym",
+			"pack3_casa",
+			"pack3_dom",
+			"pack5_clases",
+			"pack5_off",
+			"pack5_gym",
+			"pack5_casa",
+			"pack5_dom",
+			"nota1",
+			"nota2",
+			"nota3",
+		];
+
+		const DEFAULTS = {
+			suelta_gym: "5.000",
+			suelta_casa: "8.000",
+			suelta_dom: "10.000",
+			pack2_clases: "8",
+			pack2_off: "10",
+			pack2_gym: "36.000",
+			pack2_casa: "57.600",
+			pack2_dom: "72.000",
+			pack3_clases: "12",
+			pack3_off: "15",
+			pack3_gym: "51.000",
+			pack3_casa: "81.600",
+			pack3_dom: "102.000",
+			pack5_clases: "20",
+			pack5_off: "20",
+			pack5_gym: "80.000",
+			pack5_casa: "128.000",
+			pack5_dom: "160.000",
+			nota1: "El valor del gym se abona aparte.",
+			nota2: "Pago mensual adelantado.",
+			nota3: "Clases no tomadas no se recuperan.",
+		};
+
+		const $ = (id) => document.getElementById(id);
+
+		function applyData(data) {
+			KEYS.forEach((k) => {
+				const el = $(k);
+				if (!el) return;
+				el.textContent = data && data[k] !== undefined ? data[k] : DEFAULTS[k];
+				el.classList.remove("skeleton");
+			});
+		}
+
+		function setStatus(online) {
+			const dot = $("status-dot");
+			const text = $("status-text");
+			if (!dot || !text) return;
+			if (online) {
+				dot.classList.remove("loading");
+				text.textContent = "Precios actualizados";
+			} else {
+				dot.classList.add("loading");
+				text.textContent = "Sin conexión";
+			}
+		}
+
+		onSnapshot(
+			REF,
+			(snap) => {
+				applyData(snap.exists() ? snap.data() : null);
+				setStatus(true);
+			},
+			() => {
+				setStatus(false);
+			},
+		);
+
+		const DEFAULT_PASS = "estefi.fitness";
+		const getPass = () => localStorage.getItem("pt_admin_pass") || DEFAULT_PASS;
+
+		window.openModal = function () {
+			$("section-login").classList.remove("hidden");
+			$("section-changepass").classList.add("hidden");
+			$("modal-title").textContent = "ACCESO ADMIN";
+			$("modal-subtitle").textContent =
+				"Ingresá tu contraseña para editar los precios.";
+			$("input-pass").value = "";
+			$("modal-error").textContent = "";
+			$("modal-overlay").classList.add("open");
+			setTimeout(() => $("input-pass").focus(), 280);
+		};
+
+		window.closeModal = function () {
+			$("modal-overlay").classList.remove("open");
+		};
+
+		window.checkPass = function () {
+			const inp = $("input-pass");
+			if (inp.value === getPass()) {
+				window.closeModal();
+				activateEdit();
+			} else {
+				inp.classList.add("shake");
+				$("modal-error").textContent = "Contraseña incorrecta.";
+				setTimeout(() => inp.classList.remove("shake"), 400);
+				inp.value = "";
+			}
+		};
+
+		window.toggleChangeMode = function () {
+			const isChange = !$("section-changepass").classList.contains("hidden");
+			if (isChange) {
+				$("section-changepass").classList.add("hidden");
+				$("section-login").classList.remove("hidden");
+				$("modal-title").textContent = "ACCESO ADMIN";
+				$("modal-subtitle").textContent =
+					"Ingresá tu contraseña para editar los precios.";
+			} else {
+				$("section-login").classList.add("hidden");
+				$("section-changepass").classList.remove("hidden");
+				$("modal-title").textContent = "CAMBIAR CLAVE";
+				$("modal-subtitle").textContent =
+					"Actualizá tu contraseña de administrador.";
+				["cp-current", "cp-new", "cp-new2"].forEach((id) => ($(id).value = ""));
+				$("cp-error").textContent = "";
+			}
+		};
+
+		window.openChangePass = function () {
+			$("section-login").classList.add("hidden");
+			$("section-changepass").classList.remove("hidden");
+			$("modal-title").textContent = "CAMBIAR CLAVE";
+			$("modal-subtitle").textContent =
+				"Actualizá tu contraseña de administrador.";
+			["cp-current", "cp-new", "cp-new2"].forEach((id) => ($(id).value = ""));
+			$("cp-error").textContent = "";
+			$("modal-overlay").classList.add("open");
+		};
+
+		window.doChangePass = function () {
+			const cur = $("cp-current").value;
+			const n1 = $("cp-new").value;
+			const n2 = $("cp-new2").value;
+			const err = $("cp-error");
+			if (cur !== getPass()) {
+				err.textContent = "La contraseña actual es incorrecta.";
+				return;
+			}
+			if (n1.length < 4) {
+				err.textContent = "La nueva clave debe tener al menos 4 caracteres.";
+				return;
+			}
+			if (n1 !== n2) {
+				err.textContent = "Las contraseñas nuevas no coinciden.";
+				return;
+			}
+			localStorage.setItem("pt_admin_pass", n1);
+			window.closeModal();
+			window.showToast("🔑 Contraseña actualizada");
+		};
+
+		let editing = false;
+
+		function activateEdit() {
+			editing = true;
+			document.body.classList.add("edit-mode");
+			KEYS.forEach((k) => {
+				const el = $(k);
+				if (el) el.contentEditable = "true";
+			});
+			$("btn-edit").textContent = "✕ Cancelar";
+			$("btn-edit").onclick = window.cancelEdit;
+			$("btn-save").classList.remove("hidden");
+			$("btn-reset").classList.remove("hidden");
+			$("btn-changepass").classList.remove("hidden");
+		}
+
+		window.cancelEdit = function () {
+			editing = false;
+			document.body.classList.remove("edit-mode");
+			KEYS.forEach((k) => {
+				const el = $(k);
+				if (el) el.contentEditable = "false";
+			});
+			$("btn-edit").textContent = "✏️ Editar precios";
+			$("btn-edit").onclick = window.openModal;
+			$("btn-save").classList.add("hidden");
+			$("btn-reset").classList.add("hidden");
+			$("btn-changepass").classList.add("hidden");
+			getDoc(REF)
+				.then((snap) => applyData(snap.exists() ? snap.data() : null))
+				.catch(() => {});
+		};
+
+		window.saveAll = async function () {
+			const data = {};
+			KEYS.forEach((k) => {
+				const el = $(k);
+				if (el) data[k] = el.textContent.trim();
+			});
+			try {
+				await setDoc(REF, data);
+				window.showToast("✓ Precios guardados");
+				window.cancelEdit();
+			} catch (e) {
+				window.showToast("⚠️ Error al guardar.");
+			}
+		};
+
+		window.resetDefaults = async function () {
+			if (!confirm("¿Restaurar todos los precios a los valores originales?"))
+				return;
+			try {
+				await setDoc(REF, DEFAULTS);
+				window.showToast("↺ Valores restaurados");
+				window.cancelEdit();
+			} catch (e) {
+				window.showToast("⚠️ Error al restaurar.");
+			}
+		};
+
+		window.showToast = function (msg) {
+			const t = $("toast");
+			t.textContent = msg;
+			t.classList.add("show");
+			setTimeout(() => t.classList.remove("show"), 2800);
+		};
+
+		// Modal click outside
+		document.addEventListener("DOMContentLoaded", () => {
+			$("modal-overlay")?.addEventListener("click", (e) => {
+				if (e.target === $("modal-overlay")) window.closeModal();
+			});
+		});
+	</script>
 </Layout>
