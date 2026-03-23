@@ -14,7 +14,15 @@ import Layout from "../layouts/Layout.astro";
 			</p>
 
 			<div id="section-login">
-				<label class="field-label">Contraseña</label>
+				<label class="field-label">Email</label>
+				<input
+					class="modal-input"
+					type="email"
+					id="input-email"
+					placeholder="entrenador@ejemplo.com"
+					autocomplete="username"
+				/>
+				<label class="field-label" style="margin-top:12px">Contraseña</label>
 				<input
 					class="modal-input"
 					type="password"
@@ -25,53 +33,13 @@ import Layout from "../layouts/Layout.astro";
 				/>
 				<p class="modal-error" id="modal-error"></p>
 				<div class="modal-btn-row">
-					<button class="btn-primary" onclick="window.checkPass()"
+					<button class="btn-primary" onclick="window.checkPass()" id="btn-login-submit"
 						>Ingresar</button
 					>
 				</div>
-				<button class="modal-link" onclick="window.toggleChangeMode()"
-					>Cambiar contraseña</button
-				>
 			</div>
 
-			<div id="section-changepass" class="hidden">
-				<label class="field-label">Contraseña actual</label>
-				<input
-					class="modal-input"
-					type="password"
-					id="cp-current"
-					placeholder="••••••••••"
-					autocomplete="current-password"
-				/>
-				<label class="field-label">Nueva contraseña</label>
-				<input
-					class="modal-input"
-					type="password"
-					id="cp-new"
-					placeholder="••••••••••"
-					autocomplete="new-password"
-				/>
-				<label class="field-label">Repetir nueva contraseña</label>
-				<input
-					class="modal-input"
-					type="password"
-					id="cp-new2"
-					placeholder="••••••••••"
-					autocomplete="new-password"
-				/>
-				<p class="modal-error" id="cp-error"></p>
-				<div class="modal-btn-row">
-					<button class="btn-primary" onclick="window.doChangePass()"
-						>Cambiar</button
-					>
-					<button class="btn-outline" onclick="window.closeModal()"
-						>Cancelar</button
-					>
-				</div>
-				<button class="modal-link" onclick="window.toggleChangeMode()"
-					>← Volver</button
-				>
-			</div>
+
 		</div>
 	</div>
 
@@ -105,9 +73,9 @@ import Layout from "../layouts/Layout.astro";
 			>
 			<button
 				class="btn-ghost hidden"
-				id="btn-changepass"
-				onclick="window.openChangePass()"
-				style="margin-left:auto">🔑 Clave</button
+				id="btn-logout"
+				onclick="window.doLogout()"
+				style="margin-left:auto">🚪 Salir</button
 			>
 		</div>
 
@@ -350,7 +318,8 @@ import Layout from "../layouts/Layout.astro";
 	<script>
 		// @ts-nocheck
 		import { getDoc, setDoc, onSnapshot } from "firebase/firestore";
-		import { REF } from "../lib/firebase";
+		import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from "firebase/auth";
+		import { REF, auth } from "../lib/firebase";
 
 		const KEYS = [
 			"suelta_gym",
@@ -436,95 +405,75 @@ import Layout from "../layouts/Layout.astro";
 			},
 		);
 
-		const DEFAULT_PASS = "estefi.fitness";
-		const getPass = () =>
-			localStorage.getItem("pt_admin_pass") || DEFAULT_PASS;
+		onAuthStateChanged(auth, (user) => {
+			if (user) {
+				// We don't auto-activate edit mode to avoid confusion, 
+				// but when they click 'Editar precios', it will skip the modal.
+				$("btn-logout").classList.remove("hidden");
+			} else {
+				if (editing) cancelEdit();
+				$("btn-logout").classList.add("hidden");
+			}
+		});
 
 		window.openModal = function () {
+			if (auth.currentUser) {
+				activateEdit();
+				return;
+			}
 			$("section-login").classList.remove("hidden");
-			$("section-changepass").classList.add("hidden");
 			$("modal-title").textContent = "ACCESO ADMIN";
 			$("modal-subtitle").textContent =
-				"Ingresá tu contraseña para editar los precios.";
+				"Ingresá tu correo y contraseña para editar los precios.";
+			$("input-email").value = "";
 			$("input-pass").value = "";
 			$("modal-error").textContent = "";
+			$("btn-login-submit").textContent = "Ingresar";
 			$("modal-overlay").classList.add("open");
-			setTimeout(() => $("input-pass").focus(), 280);
+			setTimeout(() => $("input-email").focus(), 280);
 		};
 
 		window.closeModal = function () {
 			$("modal-overlay").classList.remove("open");
 		};
 
-		window.checkPass = function () {
+		window.checkPass = async function () {
+			const email = $("input-email").value;
 			const inp = $("input-pass");
-			if (inp.value === getPass()) {
+			const btn = $("btn-login-submit");
+			const err = $("modal-error");
+			
+			if(!email || !inp.value) {
+				err.textContent = "Ingresá email y contraseña.";
+				return;
+			}
+
+			btn.textContent = "Verificando...";
+			btn.disabled = true;
+
+			try {
+				await signInWithEmailAndPassword(auth, email, inp.value);
 				window.closeModal();
 				activateEdit();
-			} else {
+			} catch(e) {
 				inp.classList.add("shake");
-				$("modal-error").textContent = "Contraseña incorrecta.";
+				err.textContent = "Credenciales incorrectas.";
 				setTimeout(() => inp.classList.remove("shake"), 400);
+			} finally {
+				btn.disabled = false;
+				btn.textContent = "Ingresar";
 				inp.value = "";
 			}
 		};
 
-		window.toggleChangeMode = function () {
-			const isChange =
-				!$("section-changepass").classList.contains("hidden");
-			if (isChange) {
-				$("section-changepass").classList.add("hidden");
-				$("section-login").classList.remove("hidden");
-				$("modal-title").textContent = "ACCESO ADMIN";
-				$("modal-subtitle").textContent =
-					"Ingresá tu contraseña para editar los precios.";
-			} else {
-				$("section-login").classList.add("hidden");
-				$("section-changepass").classList.remove("hidden");
-				$("modal-title").textContent = "CAMBIAR CLAVE";
-				$("modal-subtitle").textContent =
-					"Actualizá tu contraseña de administrador.";
-				["cp-current", "cp-new", "cp-new2"].forEach(
-					(id) => ($(id).value = ""),
-				);
-				$("cp-error").textContent = "";
+		window.doLogout = async function () {
+			try {
+				await signOut(auth);
+				window.showToast("🚪 Sesión cerrada");
+				cancelEdit();
+			} catch(e) {
+				window.showToast("⚠️ Error al salir");
 			}
-		};
-
-		window.openChangePass = function () {
-			$("section-login").classList.add("hidden");
-			$("section-changepass").classList.remove("hidden");
-			$("modal-title").textContent = "CAMBIAR CLAVE";
-			$("modal-subtitle").textContent =
-				"Actualizá tu contraseña de administrador.";
-			["cp-current", "cp-new", "cp-new2"].forEach(
-				(id) => ($(id).value = ""),
-			);
-			$("cp-error").textContent = "";
-			$("modal-overlay").classList.add("open");
-		};
-
-		window.doChangePass = function () {
-			const cur = $("cp-current").value;
-			const n1 = $("cp-new").value;
-			const n2 = $("cp-new2").value;
-			const err = $("cp-error");
-			if (cur !== getPass()) {
-				err.textContent = "La contraseña actual es incorrecta.";
-				return;
-			}
-			if (n1.length < 4) {
-				err.textContent =
-					"La nueva clave debe tener al menos 4 caracteres.";
-				return;
-			}
-			if (n1 !== n2) {
-				err.textContent = "Las contraseñas nuevas no coinciden.";
-				return;
-			}
-			localStorage.setItem("pt_admin_pass", n1);
-			window.closeModal();
-			window.showToast("🔑 Contraseña actualizada");
 		};
 
 		let editing = false;
@@ -540,7 +489,7 @@ import Layout from "../layouts/Layout.astro";
 			$("btn-edit").onclick = window.cancelEdit;
 			$("btn-save").classList.remove("hidden");
 			$("btn-reset").classList.remove("hidden");
-			$("btn-changepass").classList.remove("hidden");
+			$("btn-logout").classList.remove("hidden");
 		}
 
 		window.cancelEdit = function () {
@@ -554,7 +503,9 @@ import Layout from "../layouts/Layout.astro";
 			$("btn-edit").onclick = window.openModal;
 			$("btn-save").classList.add("hidden");
 			$("btn-reset").classList.add("hidden");
-			$("btn-changepass").classList.add("hidden");
+			if (!auth.currentUser) {
+				$("btn-logout").classList.add("hidden");
+			}
 			getDoc(REF)
 				.then((snap) => applyData(snap.exists() ? snap.data() : null))
 				.catch(() => {});
